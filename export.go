@@ -32,7 +32,7 @@ func ExtractFeilds(xmlObject interface{}) []string {
 	return fields
 }
 
-func ExtractValues(xmlObject interface{}) ([]interface{}, bool, int64) {
+func ExtractValues(xmlObject interface{}) ([]XmlObjectAddrobj, bool, int64) {
 	s := reflect.ValueOf(xmlObject).Elem()
 	values := make([]interface{}, s.NumField() - 1)
 	flag := false
@@ -60,8 +60,8 @@ func ExtractValues(xmlObject interface{}) ([]interface{}, bool, int64) {
 	return values, flag, ao_level
 }
 
-func Normalizer(cities, areas, regions []interface{}) []interface{} {
-	result := make([]interface{}, 0)
+func Normalizer(cities, areas, regions []XmlObjectAddrobj) []XmlObjectAddrobj {
+	result := make([]XmlObjectAddrobj, 0)
 	district := make([]objectDistrict, 8)
 	district[0].id = 1
 	district[0].name = "Центральный федеральный округ"
@@ -145,9 +145,9 @@ func ExportFromXmlInPsql(structXml func(tableName string) string, xmlObject inte
 
 	stmt, err := txn.Prepare(query)
 	CheckError(err, "")
-	regions := make([]interface{}, 0)
-	areas := make([]interface{}, 0)
-	cities := make([]interface{}, 0)
+	regions := make([]XmlObjectAddrobj, 0)
+	areas := make([]XmlObjectAddrobj, 0)
+	cities := make([]XmlObjectAddrobj, 0)
 	for {
 		/*if i == 50000 {
 			i = 0
