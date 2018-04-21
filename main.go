@@ -14,6 +14,8 @@ func main() {
 	w.Add(1)
 	ObjAddrobj := &XmlObjectAddrobj{}
 	go ExportFromXmlInPsql(CreateTableAddrobj, ObjAddrobj, &w, db, "xml", logger)
+	//ObjSocrbase := &XmlObjectSocrbase{}
+	//go ExportFromXmlInPsql(CreateTableSocrbase, ObjSocrbase, &w, db, "xml", logger)
 	w.Wait()
 	fmt.Println("Все процессы завершились")
 }

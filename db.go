@@ -3,7 +3,7 @@ package main
 import "github.com/jmoiron/sqlx"
 
 func InitDb() *sqlx.DB {
-	db, err := sqlx.Open("postgres", "user=admin dbname=intelliada_db password=tnved1357tup sslmode=disable")
+	db, err := sqlx.Open("postgres", "user=dev dbname=fias password=dev sslmode=disable")
 	CheckError(err, "sqlx.Open failed")
 
 	return db
