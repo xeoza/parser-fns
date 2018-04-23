@@ -23,20 +23,16 @@ type XmlObjectAddrobj struct {
 	FORMALNAME string   `xml:"FORMALNAME,attr" db:"formal_name"`
 	OFFNAME    string   `xml:"OFFNAME,attr,omitempty" db:"off_name"`
 	SHORTNAME  string   `xml:"SHORTNAME,attr" db:"short_name"`
-	//AREA       string   `xml:"AREA,attr" db:"area"`
-    //REGION     string   `xml:"REGION,attr" db:"region"`
-    //DISTRICT   string   `xml:"DISTRICT,attr" db:"reion"`
-	AOLEVEL    int      `xml:"AOLEVEL,attr" db:"ao_level"`
-	REGIONCODE int      `xml:"REGIONCODE,attr" db:"region_code"`
-	//OKATO      string   `xml:"OKATO,attr,omitempty" db:"okato"`
-	//OKTMO      string   `xml:"OKTMO,attr,omitempty" db:"oktmo"`
-	LIVESTATUS int      `xml:"LIVESTATUS,attr" db:"live_status"`
+	AOLEVEL    int64    `xml:"AOLEVEL,attr" db:"ao_level"`
+	REGIONCODE int64    `xml:"REGIONCODE,attr" db:"region_code"`
+	LIVESTATUS int64    `xml:"LIVESTATUS,attr" db:"live_status"`
+    AREA       string   `db:"area"`
+    REGION     string   `db:"region"`
+    DISTRICT   string   `db:"district"`
+    
 }
 
 func CreateTableAddrobj(tableName string) string {
-	//AREA       string   `xml:"AREA,attr" db:"area"`
-    //REGION     string   `xml:"REGION,attr" db:"region"`
-    //DISTRICT   string   `xml:"DISTRICT,attr" db:"reion"`
     return `CREATE TABLE ` + tableName + ` (
 		ao_id UUID NOT NULL,
 	    ao_guid UUID NOT NULL,
@@ -47,6 +43,9 @@ func CreateTableAddrobj(tableName string) string {
 		ao_level INT NOT NULL,
 		region_code INT NOT NULL,
 		live_status INT NOT NULL,
+        area VARCHAR(120),
+        region VARCHAR(120),
+        district VARCHAR(120),
 		PRIMARY KEY (ao_id));`
 }
 

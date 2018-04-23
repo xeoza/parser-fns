@@ -32,7 +32,7 @@ func ExtractFeilds(xmlObject interface{}) []string {
 	return fields
 }
 
-func ExtractValues(xmlObject interface{}) ([]XmlObjectAddrobj, bool, int64) {
+func ExtractValues(xmlObject interface{}) ([]interface{}, bool, int64) {
 	s := reflect.ValueOf(xmlObject).Elem()
 	values := make([]interface{}, s.NumField() - 1)
 	flag := false
@@ -44,13 +44,13 @@ func ExtractValues(xmlObject interface{}) ([]XmlObjectAddrobj, bool, int64) {
 			if f.Type().Name() != "xml.Name" {
 				if f.Kind() == reflect.String {
 					values[i-1] = f.String()
-				} else if f.Kind() == reflect.Int {
+				} else if f.Kind() == reflect.Int64 {
 					values[i-1] = f.Int()
 				} else if f.Kind() == reflect.Bool {
 					values[i-1] = f.Bool()
 				}
 				if i == 3 && values[i-1] == ""{
-					values[i-1] = nil
+					values[i-1] = "00000000-0000-0000-0000-000000000000"
 				}
 				flag = true	
 			}
@@ -60,8 +60,74 @@ func ExtractValues(xmlObject interface{}) ([]XmlObjectAddrobj, bool, int64) {
 	return values, flag, ao_level
 }
 
-func Normalizer(cities, areas, regions []XmlObjectAddrobj) []XmlObjectAddrobj {
-	result := make([]XmlObjectAddrobj, 0)
+
+func NilToNorm(a *[]interface{}, b *[]interface{}) []interface{} {
+	*a = append(*a, *b)
+    return *a
+}
+
+func FindAreasForCities(cities, areas *[]interface{}) {
+	for _, c := range(*cities){
+		switch c.(type) {
+		case []interface{}:
+			val := reflect.ValueOf(c).Index(2)
+			loop:
+			for _, a := range(*areas){
+				switch a.(type){
+				case []interface{}:
+					rVal := reflect.ValueOf(a).Index(1)
+					if val.Interface().(string) == rVal.Interface().(string){
+						a4 := reflect.ValueOf(a).Index(4)
+						a5 := reflect.ValueOf(a).Index(5)
+						aSum := reflect.ValueOf(a4.Interface().(string)+ " " + a5.Interface().(string))
+						reflect.ValueOf(c).Index(9).Set(aSum)
+						reflect.ValueOf(c).Index(10).Set(reflect.ValueOf(a).Index(10))
+						reflect.ValueOf(c).Index(11).Set(reflect.ValueOf(a).Index(11))
+						break loop
+					}
+				case interface{}:
+					fmt.Println("naebatelstvo")
+				}
+			}
+		case interface{}:
+			fmt.Println("naebatelstvo")	
+		
+		}
+	}
+
+}
+
+func FindRegionsForAreas(areas, regions *[]interface{}) {
+	for _, a := range(*areas){
+		switch a.(type) {
+		case []interface{}:
+			val := reflect.ValueOf(a).Index(2)
+			loop:
+			for _, r := range(*regions){
+				switch r.(type){
+				case []interface{}:
+					rVal := reflect.ValueOf(r).Index(1)
+					if val.Interface().(string) == rVal.Interface().(string){
+						a4 := reflect.ValueOf(r).Index(4)
+						a5 := reflect.ValueOf(r).Index(5)
+						aSum := reflect.ValueOf(a4.Interface().(string)+ " " + a5.Interface().(string))
+						reflect.ValueOf(a).Index(10).Set(aSum)
+						reflect.ValueOf(a).Index(11).Set(reflect.ValueOf(r).Index(11))
+						break loop
+					}
+				case interface{}:
+					fmt.Println("naebatelstvo")
+				}
+			}
+		case interface{}:
+			fmt.Println("naebatelstvo")	
+		
+		}
+	}
+}
+
+func FindDistrictForRegions(regions *[]interface{}){
+
 	district := make([]objectDistrict, 8)
 	district[0].id = 1
 	district[0].name = "Центральный федеральный округ"
@@ -95,26 +161,68 @@ func Normalizer(cities, areas, regions []XmlObjectAddrobj) []XmlObjectAddrobj {
 	district[7].name = "Северо-Кавказский федеральный округ"
 	district[7].areas = []string{"Дагестан", "Ингушетия", "Кабардино-Балкарская", "Карачаево-Черкесская", "Северная Осетия - Алания", "Чеченская", "Ставропольский"}
 	
-	for i := 0; i < len(cities); i++{
-		flag := true
-		for j:=0; j < len(areas) && flag; j++{
-			if cities[i].PARENTGUID == areas[j].AOGUID{
-				result = append(result, cities[i])
-				result = append(result, areas[j].OFFNAME)
-				for k:=0; k < len(regions); k++{
-					if areas[j].PARENTGUID == regions[k].AOGUID{
-						result = append(result, regions[k].OFFNAME)
-						flag = false
-						break
-					}
-				}
 
+	for _, r := range(*regions){
+		switch r.(type) {
+		case []interface{}:
+			val := reflect.ValueOf(r).Index(4)
+			loop:
+			for i:=0; i < len(district); i++{
+				for _, str := range(district[i].areas){
+					if val.Interface().(string) == str{
+						reflect.ValueOf(r).Index(11).Set(reflect.ValueOf(district[i].name))
+						break loop
+					} 
+				}
 			}
+		case interface{}:
+			fmt.Println("naebatelstvo")
 		}
 	}
-	fmt.Println(cities)
+}
 
-	return result
+func Normalizer(cities, areas, regions []interface{}) {
+	FindDistrictForRegions(&regions)
+	FindRegionsForAreas(&areas, &regions)
+	FindAreasForCities(&cities, &areas)
+}
+
+func SendToPsql(cities *[]interface{}, db *sqlx.DB, query string){
+	txn, err := db.Begin()
+	CheckError(err, "")
+	stmt, err := txn.Prepare(query)
+	CheckError(err, "")
+	for i, city := range (*cities){
+		switch city.(type) {
+		case []interface{}:
+			if i == 100{
+				_, err = stmt.Exec()
+				CheckError(err, "")
+
+				err = stmt.Close()
+				CheckError(err, "")
+
+				err = txn.Commit()
+				CheckError(err, "")
+
+				txn, err = db.Begin()
+				CheckError(err, "")
+
+				stmt, err = txn.Prepare(query)
+				CheckError(err, "")
+			}
+			_,err = stmt.Exec(city.([]interface{})...)
+			CheckError(err, "")
+
+		case interface{}:
+			fmt.Println("naebatelstvo")
+		}
+	}
+	err = stmt.Close()
+	CheckError(err, "")
+
+	err = txn.Commit()
+	CheckError(err, "")
 }
 
 func ExportFromXmlInPsql(structXml func(tableName string) string, xmlObject interface{}, w *sync.WaitGroup, db *sqlx.DB, format string, logger *log.Logger) {
@@ -138,51 +246,16 @@ func ExportFromXmlInPsql(structXml func(tableName string) string, xmlObject inte
 	decoder := xml.NewDecoder(xmlFile)
 	i := 0
 
-	txn, err := db.Begin()
-	CheckError(err, "")
-
 	query := pq.CopyIn(objName.tableName, fields...)
 
-	stmt, err := txn.Prepare(query)
 	CheckError(err, "")
-	regions := make([]XmlObjectAddrobj, 0)
-	areas := make([]XmlObjectAddrobj, 0)
-	cities := make([]XmlObjectAddrobj, 0)
+	regions := make([]interface{}, 0)
+	areas := make([]interface{}, 0)
+	cities := make([]interface{}, 0)
 	for {
-		/*if i == 50000 {
-			i = 0
-
-			_, err = stmt.Exec()
-			CheckError(err, "")
-
-			err = stmt.Close()
-			CheckError(err, "")
-
-			err = txn.Commit()
-			CheckError(err, "")
-
-			txn, err = db.Begin()
-			CheckError(err, "")
-
-			stmt, err = txn.Prepare(query)
-			CheckError(err, "")
-		}*/
-
 		t, _ := decoder.Token()
 
-		/*if t == nil {
-			if i > 0 {
-				_, err = stmt.Exec()
-				CheckError(err, "")
-
-				err = stmt.Close()
-				CheckError(err, "")
-
-				err = txn.Commit()
-				CheckError(err, "")
-			}
-			break
-		}*/
+		if t == nil { break	}
 		switch se := t.(type) {
 		case xml.StartElement:
 			inElement := se.Name.Local
@@ -193,20 +266,19 @@ func ExportFromXmlInPsql(structXml func(tableName string) string, xmlObject inte
 				values, flag, ao_level := ExtractValues(xmlObject)
 				if flag{
 					if ao_level == 1{
-						regions = append(regions, values)
+						regions = NilToNorm(&regions, &values)
 					} else if ao_level == 3{
-						areas = append(areas, values)
+						areas = NilToNorm(&areas, &values)
 					} else if ao_level == 4{
-						cities = append(cities, values)
+						cities = NilToNorm(&cities, &values)
 						i++
 					}
-					//fmt.Println(values[7], regions)
-					_, err = stmt.Exec(values...)
-					//CheckError(err, "")
 				}
 			}
 		default:
 		}
 	}
+	
 	Normalizer(cities, areas, regions)
+	SendToPsql(&cities, db, query)
 }
