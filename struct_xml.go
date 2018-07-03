@@ -23,13 +23,13 @@ type XmlObjectAddrobj struct {
 	FORMALNAME string   `xml:"FORMALNAME,attr" db:"formal_name"`
 	OFFNAME    string   `xml:"OFFNAME,attr,omitempty" db:"off_name"`
 	SHORTNAME  string   `xml:"SHORTNAME,attr" db:"short_name"`
-	AOLEVEL    int64    `xml:"AOLEVEL,attr" db:"ao_level"`
-	REGIONCODE int64    `xml:"REGIONCODE,attr" db:"region_code"`
-	LIVESTATUS int64    `xml:"LIVESTATUS,attr" db:"live_status"`
+	AOLEVEL    int      `xml:"AOLEVEL,attr" db:"ao_level"`
+	REGIONCODE int      `xml:"REGIONCODE,attr" db:"region_code"`
+	LIVESTATUS int      `xml:"LIVESTATUS,attr" db:"live_status"`
     AREA       string   `db:"area"`
     REGION     string   `db:"region"`
     DISTRICT   string   `db:"district"`
-    
+    CENTSTATUS int      `xml:"CENTSTATUS,attr" db:"cent_status"`    
 }
 
 func CreateTableAddrobj(tableName string) string {
@@ -46,6 +46,7 @@ func CreateTableAddrobj(tableName string) string {
         area VARCHAR(120),
         region VARCHAR(120),
         district VARCHAR(120),
+        cent_status INT,
 		PRIMARY KEY (ao_id));`
 }
 

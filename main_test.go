@@ -27,6 +27,20 @@ func TestFindArea(t *testing.T) {
 			"",
 		},
 		[]interface{}{
+			"550e8400-e29b-41d4-a716-446655440000",
+			"550e8400-e29b-41d4-a716-446655440001",
+			"550e8400-e29b-41d4-a716-446655440008",
+			"Москва",
+			"Москва", 
+			"г",
+			4, 
+			91,
+			1 ,
+			"",
+			"",
+			"",
+		},
+		[]interface{}{
 			"550e8400-e29b-41d4-a716-446655440004",
 			"550e8400-e29b-41d4-a716-446655440005",
 			"550e8400-e29b-41d4-a716-446655440012",
@@ -133,7 +147,6 @@ func TestFindArea(t *testing.T) {
 		switch se := t.(type) {
 		case xml.StartElement:
 			inElement := se.Name.Local
-
 			if inElement == objName.elementName {
 				err = decoder.DecodeElement(&xmlObject, &se)
 				CheckError(err, "Error in decode element:")
@@ -147,14 +160,15 @@ func TestFindArea(t *testing.T) {
 						cities = NilToNorm(&cities, &values)
 					}
 				}
+			break
 			}
 		default:
 		}
 	}
 
 	Normalizer(cities, areas, regions)
+	//fmt.Println(cities)
 	fmt.Printf("\nType C = %T %T %T\n", c, r, a) 
-	fmt.Printf("\nType C = %T %T %T\n", cities, regions, areas) 
-	fmt.Println("_",cities) 
+	//fmt.Printf("\nType C = %T %T %T\n", cities, regions, areas) 
 	SendToPsql(&cities, db, query)  
 }

@@ -32,19 +32,18 @@ func ExtractFeilds(xmlObject interface{}) []string {
 	return fields
 }
 
-func ExtractValues(xmlObject interface{}) ([]interface{}, bool, int64) {
+func ExtractValues(xmlObject interface{}) ([]interface{}, bool, int64	) {
 	s := reflect.ValueOf(xmlObject).Elem()
 	values := make([]interface{}, s.NumField() - 1)
 	flag := false
-	var ao_level int64
+	ao_level := s.Field(7).Int()
 	if s.Field(9).Int() == 1 && s.Field(7).Int() <= 4{
-		ao_level = s.Field(7).Int()
 		for i := 0; i < s.NumField(); i++ {
 			f := s.Field(i)
 			if f.Type().Name() != "xml.Name" {
 				if f.Kind() == reflect.String {
 					values[i-1] = f.String()
-				} else if f.Kind() == reflect.Int64 {
+				} else if f.Kind() == reflect.Int {
 					values[i-1] = f.Int()
 				} else if f.Kind() == reflect.Bool {
 					values[i-1] = f.Bool()
@@ -71,11 +70,16 @@ func FindAreasForCities(cities, areas *[]interface{}) {
 		switch c.(type) {
 		case []interface{}:
 			val := reflect.ValueOf(c).Index(2)
+			cReg_code := reflect.ValueOf(c).Index(7)
 			loop:
 			for _, a := range(*areas){
 				switch a.(type){
 				case []interface{}:
 					rVal := reflect.ValueOf(a).Index(1)
+					aReg_code := reflect.ValueOf(a).Index(7)
+					//cent_stat := reflect.ValueOf(a).Index(12)
+					//if aReg_code.Interface().(int64) == cReg_code.Interface().(int64){
+						//fmt.Println(aReg_code, cReg_code, reflect.ValueOf(a).Index(4))
 					if val.Interface().(string) == rVal.Interface().(string){
 						a4 := reflect.ValueOf(a).Index(4)
 						a5 := reflect.ValueOf(a).Index(5)
@@ -84,7 +88,12 @@ func FindAreasForCities(cities, areas *[]interface{}) {
 						reflect.ValueOf(c).Index(10).Set(reflect.ValueOf(a).Index(10))
 						reflect.ValueOf(c).Index(11).Set(reflect.ValueOf(a).Index(11))
 						break loop
+					} else if aReg_code.Interface().(int64) == cReg_code.Interface().(int64){
+{						reflect.ValueOf(c).Index(10).Set(reflect.ValueOf(a).Index(10))
+						reflect.ValueOf(c).Index(11).Set(reflect.ValueOf(a).Index(11))
+						break loop
 					}
+				}
 				case interface{}:
 					fmt.Println("naebatelstvo")
 				}
@@ -135,7 +144,7 @@ func FindDistrictForRegions(regions *[]interface{}){
 	
 	district[1].id = 2 
 	district[1].name = "Южный федеральный округ"
-	district[1].areas = []string{"Адыгея", "Калмыкия", "Краснодарский", "Астраханская", "Волгоградская", "Ростовская"}
+	district[1].areas = []string{"Адыгея", "Калмыкия", "Краснодарский", "Астраханская", "Волгоградская", "Ростовская", "Крым"}
 	
 	district[2].id = 3 
 	district[2].name = "Северо-Западный федеральный округ"
@@ -155,7 +164,7 @@ func FindDistrictForRegions(regions *[]interface{}){
 	
 	district[6].id = 7 
 	district[6].name = "Приволжский федеральный округ"
-	district[6].areas = []string{"Башкортостан", "Марий Эл", "Мордовия", "Татарстан", "Удмуртская", "Чувашская", "Кировская", "Нижегородская", "Оренбургская", "Пензенская", "Ульяновская", "Самарская", "Саратовская", "Пермский"}
+	district[6].areas = []string{"Башкортостан", "Марий Эл", "Мордовия", "Татарстан", "Удмуртская", "Чувашия", "Кировская", "Нижегородская", "Оренбургская", "Пензенская", "Ульяновская", "Самарская", "Саратовская", "Пермский"}
 	
 	district[7].id = 8 
 	district[7].name = "Северо-Кавказский федеральный округ"
@@ -166,10 +175,11 @@ func FindDistrictForRegions(regions *[]interface{}){
 		switch r.(type) {
 		case []interface{}:
 			val := reflect.ValueOf(r).Index(4)
+			shortVal := reflect.ValueOf(r).Index(5)
 			loop:
 			for i:=0; i < len(district); i++{
 				for _, str := range(district[i].areas){
-					if val.Interface().(string) == str{
+					if val.Interface().(string) == str || shortVal.Interface().(string) == str{
 						reflect.ValueOf(r).Index(11).Set(reflect.ValueOf(district[i].name))
 						break loop
 					} 
@@ -180,6 +190,24 @@ func FindDistrictForRegions(regions *[]interface{}){
 		}
 	}
 }
+/*func SearhProblemCities(cities, areas *[]interface{}){
+	for _, c := range(*cities){
+			switch c.(type) {
+			case []interface{}:
+				val := reflect.ValueOf(c).Index(12)
+				loop:
+				if val.Interface().(string) == "1"{
+
+				}else if cent_stat.Interface().(string) == "2"{
+
+				}else if cent_stat.Interface().(string) == "3"{
+
+				}
+			case interface{}:
+				fmt.Println("naebatelstvo")
+			}
+		}
+}*/
 
 func Normalizer(cities, areas, regions []interface{}) {
 	FindDistrictForRegions(&regions)
@@ -278,7 +306,8 @@ func ExportFromXmlInPsql(structXml func(tableName string) string, xmlObject inte
 		default:
 		}
 	}
-	
+
 	Normalizer(cities, areas, regions)
+	fmt.Println(areas)
 	SendToPsql(&cities, db, query)
 }
